@@ -7,7 +7,7 @@ def scrape(url: str):
         r = requests.get(url)
         soup = BeautifulSoup(r.content, features='xml')
         articles = soup.findAll('item')
-        article_list=[]
+        article_list = []
         for a in articles:
             title = a.find('title').text
             link = a.find('link').text
@@ -16,13 +16,11 @@ def scrape(url: str):
                 'title': title,
                 'link': link,
                 'published': published
-                }
+            }
             article_list.append(article)
 
-        return print(article_list[5])
+        return article_list
 
     except Exception as e:
         print('The scraping job failed. See exception: ')
         print(e)
-
-scrape("https://feeds.feedburner.com/tweakers/mixed")

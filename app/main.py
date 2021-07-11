@@ -5,15 +5,16 @@ from fastapi.exceptions import HTTPException
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import with_expression
 from jose import JWTError, jwt
-from .models import Base, User
+from .models import Base, User,Subscription
 from .schemas import TokenData
 
 from .database import SessionLocal, engine
 from .utils.exceptions import credentials_exception
 
 from .services.user_service import register_user, login_user
-from .services.feed_service import subscribe_feed, unsubscribe_feed
+from .services.feed_service import subscribe_feed, unsubscribe_feed, list_feeds, add_feed_items
 
+# Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -73,7 +74,6 @@ async def follow_rss(feed_url: str, token: str = Depends(oauth2_scheme)):
         return subscribe_feed(feed_url, user.id)
 
 
-
 @app.delete("/unfollow-rss")
 async def unfollow_rss(feed_url: str, token: str = Depends(oauth2_scheme)):
     user = auth_user(token)
@@ -81,3 +81,21 @@ async def unfollow_rss(feed_url: str, token: str = Depends(oauth2_scheme)):
         raise credentials_exception
     else:
         return unsubscribe_feed(feed_url, user.id)
+
+
+@app.get("/list-feeds")
+async def list_feeds(token: str = Depends(oauth2_scheme)):
+    user = auth_user(token)
+    if not user:
+        raise credentials_exception
+    else:
+        return list_feeds(user.id)
+
+
+@app.post("/list-items")
+async def list_feed_items(feed_url: str, token: str = Depends(oauth2_scheme)):
+    user = auth_user(token)
+    if not user:
+        raise credentials_exception
+    else:
+        return add_feed_items(feed_url)
