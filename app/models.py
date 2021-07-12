@@ -1,8 +1,8 @@
 import datetime
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, JSON
+from sqlalchemy import Column, ForeignKey, Integer, String, DateTime
 from sqlalchemy.orm import relationship
 
-from .database import Base
+from database import Base
 
 
 class User(Base):
@@ -10,7 +10,13 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(32), unique=True, index=True)
     password = Column(String(100))
-    # list of item urls
+
+
+class ReadItem(Base):
+    __tablename__ = "read feeds"
+    id = Column(Integer, primary_key=True, index=True)
+    reader_id = Column(Integer, ForeignKey("users.id"))
+    item_id = Column(Integer, ForeignKey("feed items.id"))
 
 
 class Subscription(Base):

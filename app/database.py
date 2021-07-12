@@ -4,11 +4,11 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 config = {
-    'host': 'localhost',
+    'host': 'mysql',
     'port': 3306,
-    'user': 'root',
-    'password': 'mscpw',
-    'database': 'test-db'
+    'user': 'admin',
+    'password': 'admin',
+    'database': 'rss-db'
 }
 
 db_user = config.get('user')

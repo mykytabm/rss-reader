@@ -1,20 +1,22 @@
 
 from typing import final
 from fastapi import Depends, FastAPI, Form, status
+import fastapi
+import os
 from fastapi.exceptions import HTTPException
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import with_expression
 from jose import JWTError, jwt
-from .models import Base, User,Subscription
-from .schemas import TokenData
+from models import Base, User, Subscription
+from schemas import TokenData
 
-from .database import SessionLocal, engine
-from .utils.exceptions import credentials_exception
+from database import SessionLocal, engine
+from utils.exceptions import credentials_exception
 
-from .services.user_service import register_user, login_user
-from .services.feed_service import subscribe_feed, unsubscribe_feed, list_feeds, add_feed_items
+from services.user_service import register_user, login_user
+from services.feed_service import subscribe_feed, unsubscribe_feed, list_feeds, get_feed_items, update_feed
 
-# Base.metadata.drop_all(bind=engine)
+#Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -49,11 +51,9 @@ def auth_user(token: str):
         return False
     return user
 
-
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
-
+@app.on_event("startup")
+async def startup():
+    Base.metadata.create_all(bind=engine)
 
 @app.get("/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
@@ -92,10 +92,19 @@ async def list_feeds(token: str = Depends(oauth2_scheme)):
         return list_feeds(user.id)
 
 
-@app.post("/list-items")
-async def list_feed_items(feed_url: str, token: str = Depends(oauth2_scheme)):
+@app.get("/get-items")
+async def list_feed_items(feed_url: str, start: int, end: int, token: str = Depends(oauth2_scheme)):
     user = auth_user(token)
     if not user:
         raise credentials_exception
     else:
-        return add_feed_items(feed_url)
+        return get_feed_items(feed_url, start, end)
+
+
+@app.get("/update-feed")
+async def update_feed(feed_url: str, token: str = Depends(oauth2_scheme)):
+    user = auth_user(token)
+    if not user:
+        raise credentials_exception
+    else:
+        return update_feed(feed_url)

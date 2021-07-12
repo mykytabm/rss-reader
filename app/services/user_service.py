@@ -1,7 +1,7 @@
 from datetime import timedelta, datetime
 from typing import Optional
-from ..database import SessionLocal
-from ..models import User
+from database import SessionLocal
+from models import User
 from jose import JWTError, jwt
 from fastapi import status
 from fastapi.exceptions import HTTPException
@@ -11,8 +11,11 @@ from passlib.context import CryptContext
 SECRET_KEY = "765e6d6a8fa43f75a5fdd20e31b136b1c6dc2641e2f6646a504353745285f905"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
+# if "SECRET_KEY" in os.environ:
+#     return os.environ["SECRET_KEY"]
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
