@@ -17,19 +17,32 @@ services:
    test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
    timeout: 20s
    retries: 10
+ rabbitmq:
+  image: rabbitmq:3-management-alpine
+  ports:
+      - "5672:5672"
+      - "15672:15672"
+  networks:
+      - local-net
+  healthcheck:
+   test: rabbitmq-diagnostics -q ping
+   interval: 30s
+   timeout: 30s
+   retries: 3
  api:
   links:
-  - db
+   - mysql
+   - rabbitmq
   container_name: "api"
   build: ./
   ports:
   - "80:80"
-  volumes:
-  - ./code:/usr/src/server
   networks:
   - local-net
   depends_on:
     mysql:
+     condition: service_healthy
+    rabbitmq:
      condition: service_healthy
 networks:
   local-net:
