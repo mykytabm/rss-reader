@@ -12,18 +12,18 @@ from schemas import TokenData
 
 from database import SessionLocal, engine
 from utils.exceptions import credentials_exception
-
+from utils.secret_key import secret_key
 from services.user_service import register_user, login_user
-from services.feed_service import subscribe_feed, unsubscribe_feed, list_feeds, get_feed_items, update_feed
+from services.feed_service import subscribe_feed, unsubscribe_feed, list_feeds, get_feed_items, update_feed, get_filtered_items
 
-#Base.metadata.drop_all(bind=engine)
+# Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-SECRET_KEY = "765e6d6a8fa43f75a5fdd20e31b136b1c6dc2641e2f6646a504353745285f905"
+
 ALGORITHM = "HS256"
 
 
@@ -37,7 +37,7 @@ def get_db():
 
 def auth_user(token: str):
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, secret_key(), algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
             return False
@@ -51,9 +51,11 @@ def auth_user(token: str):
         return False
     return user
 
+
 @app.on_event("startup")
 async def startup():
     Base.metadata.create_all(bind=engine)
+
 
 @app.get("/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
@@ -99,6 +101,15 @@ async def list_feed_items(feed_url: str, start: int, end: int, token: str = Depe
         raise credentials_exception
     else:
         return get_feed_items(feed_url, start, end)
+
+
+@app.get('/get-filtered-items')
+async def list_filtered_feed_items(feed_url: str, read: bool, start: int, end: int, token: str = Depends(oauth2_scheme)):
+    user = auth_user(token)
+    if not user:
+        raise credentials_exception
+    else:
+        return get_filtered_items(feed_url, read, user.id, start, end)
 
 
 @app.get("/update-feed")
