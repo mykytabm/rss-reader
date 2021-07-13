@@ -6,6 +6,7 @@ import os
 from fastapi.exceptions import HTTPException
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import with_expression
+from starlette.status import HTTP_204_NO_CONTENT
 from jose import JWTError, jwt
 from models import Base, User, Subscription
 from schemas import TokenData
@@ -62,12 +63,12 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     return login_user(form_data)
 
 
-@app.post("/register")
+@app.post("/register", status_code=HTTP_204_NO_CONTENT)
 async def register(username: str = Form(...), password: str = Form(...)):
     register_user(username, password)
 
 
-@app.post("/follow-rss")
+@app.post("/follow-rss", status_code=HTTP_204_NO_CONTENT)
 async def follow_rss(feed_url: str, token: str = Depends(oauth2_scheme)):
     user = auth_user(token)
     if not user:
@@ -76,7 +77,7 @@ async def follow_rss(feed_url: str, token: str = Depends(oauth2_scheme)):
         return subscribe_feed(feed_url, user.id)
 
 
-@app.delete("/unfollow-rss")
+@app.delete("/unfollow-rss", status_code=HTTP_204_NO_CONTENT)
 async def unfollow_rss(feed_url: str, token: str = Depends(oauth2_scheme)):
     user = auth_user(token)
     if not user:
@@ -112,7 +113,7 @@ async def list_filtered_feed_items(feed_url: str, read: bool, start: int, end: i
         return get_filtered_items(feed_url, read, user.id, start, end)
 
 
-@app.get("/update-feed")
+@app.get("/update-feed", status_code=HTTP_204_NO_CONTENT)
 async def update_feed(feed_url: str, token: str = Depends(oauth2_scheme)):
     user = auth_user(token)
     if not user:
