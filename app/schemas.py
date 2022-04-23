@@ -32,6 +32,8 @@ class SubscriptionCreate(SubscriptionBase):
 
 class Subscription(BaseModel):
     id: int
+    subscribed_id: int
+    feed_url: str
 
     class Config:
         orm_mode = True
