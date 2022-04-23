@@ -6,7 +6,7 @@ import os
 from fastapi.exceptions import HTTPException
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import with_expression
-from starlette.status import HTTP_204_NO_CONTENT
+from starlette.status import HTTP_204_NO_CONTENT, HTTP_200_OK
 from jose import JWTError, jwt
 from models import Base, User, Subscription
 from schemas import TokenData
@@ -15,7 +15,7 @@ from database import SessionLocal, engine
 from utils.exceptions import credentials_exception
 from utils.secret_key import secret_key
 from services.user_service import register_user, login_user
-from services.feed_service import subscribe_feed, unsubscribe_feed, list_feeds, get_feed_items, update_feed, get_filtered_items
+from services.feed_service import subscribe_feed, unsubscribe_feed, get_user_feeds, get_feed_items, update_feed, get_filtered_items, mark_item
 
 # Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
@@ -63,12 +63,12 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     return login_user(form_data)
 
 
-@app.post("/register", status_code=HTTP_204_NO_CONTENT)
+@app.post("/register", status_code=HTTP_200_OK)
 async def register(username: str = Form(...), password: str = Form(...)):
     register_user(username, password)
 
 
-@app.post("/follow-rss", status_code=HTTP_204_NO_CONTENT)
+@app.post("/follow-rss", status_code=HTTP_200_OK)
 async def follow_rss(feed_url: str, token: str = Depends(oauth2_scheme)):
     user = auth_user(token)
     if not user:
@@ -77,7 +77,7 @@ async def follow_rss(feed_url: str, token: str = Depends(oauth2_scheme)):
         return subscribe_feed(feed_url, user.id)
 
 
-@app.delete("/unfollow-rss", status_code=HTTP_204_NO_CONTENT)
+@app.delete("/unfollow-rss", status_code=HTTP_200_OK)
 async def unfollow_rss(feed_url: str, token: str = Depends(oauth2_scheme)):
     user = auth_user(token)
     if not user:
@@ -86,25 +86,35 @@ async def unfollow_rss(feed_url: str, token: str = Depends(oauth2_scheme)):
         return unsubscribe_feed(feed_url, user.id)
 
 
-@app.get("/list-feeds")
-async def list_feeds(token: str = Depends(oauth2_scheme)):
+@app.get("/list-feeds",status_code=HTTP_200_OK)
+async def list_feeds(start: int, end: int, token: str = Depends(oauth2_scheme)):
     user = auth_user(token)
     if not user:
         raise credentials_exception
     else:
-        return list_feeds(user.id)
+        return get_user_feeds(user.id, start, end)
 
 
-@app.get("/get-items")
+@app.get("/get-items",status_code=HTTP_200_OK)
 async def list_feed_items(feed_url: str, start: int, end: int, token: str = Depends(oauth2_scheme)):
     user = auth_user(token)
     if not user:
         raise credentials_exception
     else:
         return get_feed_items(feed_url, start, end)
+    
+    
+@app.post("/mark-item",status_code=HTTP_200_OK)
+async def mark_item_read(item_link: str, token: str = Depends(oauth2_scheme)):
+    user = auth_user(token)
+    if not user:
+        raise credentials_exception
+    else:
+        return mark_item(item_link, user.id)
 
 
-@app.get('/get-filtered-items')
+
+@app.get('/get-filtered-items',status_code=HTTP_200_OK)
 async def list_filtered_feed_items(feed_url: str, read: bool, start: int, end: int, token: str = Depends(oauth2_scheme)):
     user = auth_user(token)
     if not user:
@@ -113,7 +123,7 @@ async def list_filtered_feed_items(feed_url: str, read: bool, start: int, end: i
         return get_filtered_items(feed_url, read, user.id, start, end)
 
 
-@app.get("/update-feed", status_code=HTTP_204_NO_CONTENT)
+@app.get("/update-feed", status_code=HTTP_200_OK)
 async def update_feed(feed_url: str, token: str = Depends(oauth2_scheme)):
     user = auth_user(token)
     if not user:

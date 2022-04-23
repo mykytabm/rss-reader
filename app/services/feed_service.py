@@ -68,7 +68,7 @@ def get_filtered_items(feed_url: str, read: bool, user_id: int, start: int, end:
         read_items = session.query(ReadItem).filter(
             ReadItem.reader_id == user_id).all()
         # save all read items ids in the list
-        read_items_ids = [read_items.item_id for item in read_items]
+        read_items_ids = [item.item_id for item in read_items]
         filtered_feed = []
         if read:
             if read_items:
@@ -88,7 +88,7 @@ def get_filtered_items(feed_url: str, read: bool, user_id: int, start: int, end:
 
 
 def mark_item(item_link: str, user_id: int):
-    '''Takes in string feed url, int user_id, marks item as read (adds it to db of read items)'''
+    '''Takes in string item link, int user_id, marks item as read (adds it to db of read items)'''
     with SessionLocal() as session:
         # get feed item
         item = session.query(FeedItem).filter(
@@ -126,7 +126,7 @@ def subscribe_feed(feed_url: str, user_id: int):
             updator_thread.start()
         else:
             raise HTTPException(
-                status_code=400, detail="user already follows this feed")
+                status_code=304, detail="user already follows this feed")
 
 
 def unsubscribe_feed(feed_url: str, user_id: int):
@@ -139,19 +139,17 @@ def unsubscribe_feed(feed_url: str, user_id: int):
             session.commit()
         else:
             raise HTTPException(
-                status_code=400, detail="user does not follow this feed")
+                status_code=304, detail="user does not follow this feed")
 
 
-def list_feeds(user_id: int, start: int, end: int):
+def get_user_feeds(user_id: int, start: int, end: int):
     '''Takes in int user id, number start and number end, returns array of subscribed feed url's'''
     with SessionLocal() as session:
-        subscriptions = session.query(Subscription).filter(
+        feeds = session.query(Subscription).filter(
             Subscription.subscribed_id == user_id)[start:end]
-        if subscriptions:
-            feed_links = []
-            for subscription in subscriptions:
-                feed_links.append(subscription.feed_url)
+        if feeds:
+            feed_links = [feed.feed_url for feed in feeds]
             return feed_links
         else:
             raise HTTPException(
-                status_code=400, detail="user does not follow any feeds")
+                status_code=304, detail="user does not follow any feeds")
