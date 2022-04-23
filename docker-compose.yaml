@@ -35,6 +35,7 @@ services:
     - rabbitmq
     container_name: "api"
     build: ./
+    command: bash -c "uvicorn main:app --host 0.0.0.0 --port 80 --reload"
     ports:
     - "80:80"
     networks:
@@ -44,7 +45,7 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-        
+
 networks:
   local-net:
     driver: bridge
